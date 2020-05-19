@@ -1,0 +1,4 @@
+[submodule "Projects/HTBManager"]
+	path = Projects/HTBManager
+	url = https://github.com/oonray/HTBManager
+	branch = rewrite
