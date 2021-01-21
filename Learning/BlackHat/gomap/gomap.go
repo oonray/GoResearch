@@ -4,26 +4,60 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net"
-	"sync"
+	"sort"
 )
 
-func scan(host string,port int,wg sync.WaitGroup) error {
-	defer wg.Done()
-	conn, err := net.Dial("tcp",fmt.Sprintf("%s:%d",host,port))
-	if(err != nil){
+func scan(host string, port int) error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	conn.Close()
 
-	logrus.Infof("Port %s Open",port)
+	logrus.Infof("Port %d Open", port)
 	return nil
 }
 
-func main(){
-	var wg sync.WaitGroup
-	for i := 0; i<= 1024; i++ {
-		wg.Add(1)
-		go scan("scanme.nmap.org",i,wg)
+func worker(ports chan int, results chan int) {
+	for p := range ports {
+		addr := fmt.Sprintf("scanme.nmap.org:%d", p)
+		con, err := net.Dial("tcp", addr)
+		if err != nil {
+			results <- 0
+			continue
+		}
+		con.Close()
+		results <- p
 	}
-	wg.Wait()
+}
+
+func main() {
+	var ports chan int = make(chan int, 100)
+	var results chan int = make(chan int, 1024)
+	var openports []int
+
+	for i := 1; i <= cap(ports); i++ {
+		go worker(ports, results)
+	}
+
+	go func() {
+		for i := 0; i <= 1024; i++ {
+			ports <- i
+		}
+	}()
+
+	for i := 0; i <= 1024; i++ {
+		port := <-results
+		if port != 0 {
+			openports = append(openports, port)
+		}
+	}
+	fmt.Print("\n")
+	close(ports)
+	close(results)
+
+	sort.Ints(openports)
+	for _, port := range openports {
+		logrus.Infof("Port %d Open", port)
+	}
 }
