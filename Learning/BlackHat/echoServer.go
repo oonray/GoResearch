@@ -1,47 +1,54 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
+	"bufio"
 	"io"
 	"net"
+
+	"github.com/sirupsen/logrus"
 )
 
-func echo(con net.Conn){
+func better_echo(conn net.Conn) {
 	defer con.Close()
-	var b []byte = make([]byte,512)
-	var size int
-	var err error
 
-	for{
-		size,err = con.Read(b[0:])
-		if(err != nil){
-			if(err == io.EOF){
-				logrus.Errorf("The clent disconnected")
-				break
-			}
-			logrus.Error("Could not read: %s",err)
-			break
-		}
+	_, err := io.Copy(conn, conn)
+	if err != nil {
+		logrus.Errorf("Could not read/write %s", err)
 
-		logrus.Infof("Recieved %d bytes: %s",size,string(b[:size]))
-		_,err = con.Write(b[:size])
-		if(err != nil){
-			logrus.Errorf("Could Not Write Data")
-		}
 	}
 }
 
-func main(){
-	listener, err := net.Listen("tcp",":20080")
-	if(err != nil){
-		logrus.Errorf("Could not start listener %s",err)
+func echo(con net.Conn) {
+	defer con.Close()
+	var err error
+
+	reader := bufio.NewReader(con)
+	s, err := reader.ReadString('\n')
+	if err != nil {
+		logrus.Errorf("Unable to Read data: %s", s)
+	}
+	logrus.Infof("Read %d Bytes %s", len(s), s)
+
+	logrus.Infof("Writes Data")
+	writer := bufio.NewWriter(con)
+	_, err = writer.WriteString(s)
+	if err != nil {
+		logrus.Errorf("Could not Write: %s", err)
+	}
+	writer.Flush()
+}
+
+func main() {
+	listener, err := net.Listen("tcp", ":20080")
+	if err != nil {
+		logrus.Errorf("Could not start listener %s", err)
 		return
 	}
 
 	logrus.Infof("Listening on :20080")
-	for{
+	for {
 		con, err := listener.Accept()
-		if(err != nil){
+		if err != nil {
 			logrus.Errorf("Could not Accept request")
 			continue
 		}

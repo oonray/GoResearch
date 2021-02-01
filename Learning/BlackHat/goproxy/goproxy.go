@@ -1,50 +1,54 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"io"
 	"net"
+
+	"github.com/sirupsen/logrus"
 )
 
-func echo(con net.Conn){
-	defer con.Close()
-	var b []byte = make([]byte,512)
-	var size int
-	var err error
-
-	for{
-		size,err = con.Read(b[0:])
-		if(err != nil){
-			if(err == io.EOF){
-				logrus.Errorf("The clent disconnected")
-				break
-			}
-			logrus.Error("Could not read: %s",err)
-			break
-		}
-
-		logrus.Infof("Recieved %d bytes: %s",size,string(b[:size]))
-		_,err = con.Write(b[:size])
-		if(err != nil){
-			logrus.Errorf("Could Not Write Data")
-		}
+func echo(conn net.Conn) {
+	defer conn.Close()
+	_, err := io.Copy(conn, conn)
+	if err != nil {
+		logrus.Errorf("Could not Read/Write %s", err)
 	}
 }
 
-func main(){
-	listener, err := net.Listen("tcp",":20080")
-	if(err != nil){
-		logrus.Errorf("Could not start listener %s",err)
-		return
+func handle(src net.Conn) {
+	dst, err := net.Dial("tcp", "joescatcam.website:80")
+
+	if err != nil {
+		logrus.Errorf("Unable to conenct")
 	}
 
-	logrus.Infof("Listening on :20080")
-	for{
-		con, err := listener.Accept()
-		if(err != nil){
-			logrus.Errorf("Could not Accept request")
-			continue
+	defer dst.Close()
+
+	go func() {
+		_, err := io.Copy(dst, src)
+		if err != nil {
+			logrus.Errorf("Could Not read/Write: %s", err)
 		}
-		go echo(con)
+	}()
+
+	_, err = io.Copy(src, dst)
+	if err != nil {
+		logrus.Errorf("Could Not read/Write: %s", err)
+	}
+}
+
+func main() {
+	listener, err := net.Listen("http", "0.0.0.0")
+	if err != nil {
+		logrus.Errorf("Unable To Bind")
+	}
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			logrus.Errorf("Unable to Accept")
+		}
+
+		go handle(conn)
 	}
 }

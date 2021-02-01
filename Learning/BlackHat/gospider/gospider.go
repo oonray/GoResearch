@@ -2,11 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/Willyham/gospider/spider"
-	"github.com/sirupsen/logrus"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/Willyham/gospider/spider"
+	"github.com/sirupsen/logrus"
 )
 
 func main(){
