@@ -40,7 +40,7 @@ func handle(src net.Conn, proto string, host string, port int) {
 }
 
 func main() {
-	http := flag.Bool("p", false, "Use HTTP")
+	http := flag.Bool("ht", false, "Use HTTP")
 	udp := flag.Bool("u", false, "Use UDP")
 	host := flag.String("H", "127.0.0.1", "Host to connect to")
 	port := flag.Int("P", 80, "Port to bind to")
