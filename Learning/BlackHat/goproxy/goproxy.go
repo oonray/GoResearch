@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"io"
 	"net"
 
@@ -15,8 +17,8 @@ func echo(conn net.Conn) {
 	}
 }
 
-func handle(src net.Conn) {
-	dst, err := net.Dial("tcp", "joescatcam.website:80")
+func handle(src net.Conn, proto string, host string, port int) {
+	dst, err := net.Dial(proto, fmt.Sprintf("%s:%d", host, port))
 
 	if err != nil {
 		logrus.Errorf("Unable to conenct")
@@ -38,7 +40,28 @@ func handle(src net.Conn) {
 }
 
 func main() {
-	listener, err := net.Listen("http", "0.0.0.0")
+	http := flag.Bool("p", false, "Use HTTP")
+	udp := flag.Bool("u", false, "Use UDP")
+	host := flag.String("H", "127.0.0.1", "Host to connect to")
+	port := flag.Int("P", 80, "Port to bind to")
+	host_b := flag.String("B", "0.0.0.0", "Host to bind to")
+	port_b := flag.Int("p", 80, "Port to connect to")
+	flag.Parse()
+
+	proto := "tcp"
+
+	if *http {
+		proto = "http"
+	}
+
+	if *udp {
+		proto = "udp"
+	}
+
+	url := fmt.Sprintf("%s:%d", *host_b, *port_b)
+	logrus.Infof("Binding to %s", url)
+
+	listener, err := net.Listen(proto, url)
 	if err != nil {
 		logrus.Errorf("Unable To Bind")
 	}
@@ -49,6 +72,6 @@ func main() {
 			logrus.Errorf("Unable to Accept")
 		}
 
-		go handle(conn)
+		go handle(conn, proto, *host, *port)
 	}
 }

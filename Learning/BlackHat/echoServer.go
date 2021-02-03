@@ -9,7 +9,7 @@ import (
 )
 
 func better_echo(conn net.Conn) {
-	defer con.Close()
+	defer conn.Close()
 
 	_, err := io.Copy(conn, conn)
 	if err != nil {
