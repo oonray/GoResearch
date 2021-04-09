@@ -1,0 +1,6 @@
+package debruijn
+
+func main(){
+
+
+}
