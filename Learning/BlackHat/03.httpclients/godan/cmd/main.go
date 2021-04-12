@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"os"
-	""
+
+	"github.com/oonray/GoResearch/Learning/BlackHat/03.http/godan/shodan"
 	"github.com/sirupsen/logrus"
 )
 
